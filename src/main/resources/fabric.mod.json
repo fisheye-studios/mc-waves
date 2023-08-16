@@ -1,31 +1,31 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "oceanwaves",
 	"version": "${version}",
-	"name": "Example mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Waves lol",
+	"description": "Just adds waves to the ocean",
 	"authors": [
-		"Me!"
+		"sshcrack"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://sshcrack.me",
+		"sources": "https://github.com/fisheye-studios/mc-waves"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/waves/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
+			"me.sshcrack.waves.WavesMod"
 		],
 		"client": [
-			"com.example.ExampleModClient"
+			"me.sshcrack.waves.WavesModClient"
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
+		"waves.mixins.json",
 		{
-			"config": "modid.client.mixins.json",
+			"config": "waves.client.mixins.json",
 			"environment": "client"
 		}
 	],
@@ -35,7 +35,5 @@
 		"java": ">=17",
 		"fabric-api": "*"
 	},
-	"suggests": {
-		"another-mod": "*"
-	}
+	"suggests": {}
 }
