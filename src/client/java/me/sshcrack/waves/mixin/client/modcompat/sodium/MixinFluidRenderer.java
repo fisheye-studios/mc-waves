@@ -17,6 +17,7 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -62,57 +63,42 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
         writeQuad(builder, offset, quad, facing, winding);
     }
 
-    @Inject(
+    @WrapOperation(
             method = "render",
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/pipeline/FluidRenderer;updateQuad(Lme/jellysquid/mods/sodium/client/model/quad/ModelQuadView;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/util/math/BlockPos;Lme/jellysquid/mods/sodium/client/model/light/LightPipeline;Lnet/minecraft/util/math/Direction;FLme/jellysquid/mods/sodium/client/model/quad/blender/ColorSampler;Lnet/minecraft/fluid/FluidState;)V",
                     ordinal = 0
-            ),
-            locals = LocalCapture.CAPTURE_FAILHARD
+            )
     )
     // wtf is this method haha
     private void wave$subdivideWater(
-            BlockRenderView world, FluidState fluidState,
-            BlockPos pos, BlockPos offset,
-            ChunkModelBuilder buffers, CallbackInfoReturnable<Boolean> cir,
-
-
-            int posX, int posY, int posZ,
-            Fluid fluid,
-            boolean sfUp, boolean sfDown, boolean sfNorth, boolean sfSouth, boolean sfWest, boolean sfEast,
-            boolean isWater,
-            FluidRenderHandler handler,
-            ColorSampler<FluidState> colorizer,
-            Sprite[] sprites,
-            boolean rendered,
-            float fluidHeight,
-            float h1, float h2, float h3, float h4,
-            float yOffset,
-            ModelQuadViewMutable quad,
-            LightMode lightMode,
+            FluidRenderer renderer,
+            ModelQuadView quad,
+            BlockRenderView world,
+            BlockPos pos,
             LightPipeline lighter,
-            Vec3d velocity,
-            Sprite sprite,
-            ModelQuadFacing facing,
-            float u1, float u2, float u3, float u4,
-            float v1, float v2, float v3, float v4,
-            float uAvg, float vAvg,
-            float s1, float s2, float s3
+            Direction dir,
+            float brightness,
+            ColorSampler<FluidState> colorSampler,
+            FluidState fluidState,
+
+            Operation<Void> operation,
+
+            BlockRenderView _world, FluidState _fluidState, BlockPos _pos, BlockPos offset, ChunkModelBuilder buffers
     ) {
-        if (!isWater || isSubdividing) {
+        if (!fluidState.isIn(FluidTags.WATER) || isSubdividing) {
+            operation.call(renderer, quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
             return;
         }
 
         waves$setSubdividing(true);
-        Debug.splitWater(FluidRenderer.class.cast(this), quad, world, pos, lighter, Direction.UP, 1.0F, colorizer, fluidState, buffers, offset, facing);
+        Debug.splitWater(FluidRenderer.class.cast(this), quad, world, pos, lighter, Direction.UP, 1.0F, colorSampler, fluidState, buffers, offset);
         waves$setSubdividing(false);
         hasRendered = true;
-
-        cir.cancel();
     }
 
-    @Inject(
+    @WrapOperation(
             method = "render",
             at = @At(
                     value = "INVOKE",
@@ -120,11 +106,16 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
                     ordinal = 0
             )
     )
-    private void waves$writeQuad(BlockRenderView world, FluidState fluidState, BlockPos pos, BlockPos offset, ChunkModelBuilder buffers, CallbackInfoReturnable<Boolean> cir) {
-        if(!hasRendered)
+    private void waves$writeQuad(
+            FluidRenderer renderer,
+            ChunkModelBuilder builder, BlockPos offset, ModelQuadView quad, ModelQuadFacing facing, ModelQuadWinding winding,
+            Operation<Void> operation
+    ) {
+        if(!hasRendered) {
+            operation.call(renderer, builder, offset, quad, facing, winding);
             return;
+        }
 
         hasRendered = false;
-        cir.cancel();
     }
 }

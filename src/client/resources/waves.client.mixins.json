@@ -9,7 +9,6 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "modcompat.sodium.FluidRendererAccessor",
     "modcompat.sodium.MixinFluidRenderer"
   ]
 }
