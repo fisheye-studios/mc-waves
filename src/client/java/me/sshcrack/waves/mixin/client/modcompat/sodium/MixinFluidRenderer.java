@@ -20,6 +20,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Spline;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockRenderView;
 import org.spongepowered.asm.mixin.Final;
@@ -36,6 +37,8 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
     @Shadow protected abstract void updateQuad(ModelQuadView quad, BlockRenderView world, BlockPos pos, LightPipeline lighter, Direction dir, float brightness, ColorSampler<FluidState> colorSampler, FluidState fluidState);
 
     @Shadow protected abstract void writeQuad(ChunkModelBuilder builder, BlockPos offset, ModelQuadView quad, ModelQuadFacing facing, ModelQuadWinding winding);
+
+    @Shadow @Final private ModelQuadViewMutable quad;
 
     @Override
     public boolean waves$isSubdividing() {
@@ -93,7 +96,7 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
         }
 
         waves$setSubdividing(true);
-        Debug.splitWater(FluidRenderer.class.cast(this), quad, world, pos, lighter, Direction.UP, 1.0F, colorSampler, fluidState, buffers, offset);
+        Debug.splitWater(FluidRenderer.class.cast(this), this.quad, world, pos, lighter, Direction.UP, 1.0F, colorSampler, fluidState, buffers, offset);
         waves$setSubdividing(false);
         hasRendered = true;
     }

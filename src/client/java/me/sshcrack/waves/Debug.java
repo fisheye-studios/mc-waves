@@ -9,11 +9,14 @@ import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.FluidRenderer;
-import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.sshcrack.waves.mixin.client.VertexInfo;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.util.function.ToFloatFunction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Spline;
 import net.minecraft.world.BlockRenderView;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -21,12 +24,14 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 public class Debug {
-    private static final ModelQuadViewMutable quad = new ModelQuad();
 
-
-    static {
-        quad.setNormal(Norm3b.pack(0.0F, 1.0F, 0.0F));
-    }
+    private static final Spline<Float, ToFloatFunction<Float>> CUT_SPLINE = Spline.builder(ToFloatFunction.fromFloat(v -> v))
+            .add(MathHelper.square(0f), 10)
+            .add(MathHelper.square(5f), 3)
+            .add(MathHelper.square(10f), 2)
+            .add(MathHelper.square(20f), 1)
+            .add(MathHelper.square(30f), 0)
+            .build();
 
     private static Vector3fc getCoordinates(int vertexIndex, ModelQuadView quad) {
         return new Vector3f(
@@ -38,7 +43,7 @@ public class Debug {
 
     public static void splitWater(
             FluidRenderer renderer,
-            ModelQuadView quadMethod,
+            ModelQuadViewMutable quad,
             BlockRenderView world,
             BlockPos pos,
             LightPipeline lighter,
@@ -50,14 +55,20 @@ public class Debug {
             BlockPos offset
     ) {
         var acc = (FluidRendererState) renderer;
-        //acc.waves$updateQuad(quadMethod, world, pos, lighter, dir, brightness, colorSampler, fluidState);
-        //acc.waves$writeQuad(buffers, offset, quadMethod, ModelQuadFacing.UP, ModelQuadWinding.CLOCKWISE);
+        var cam = MinecraftClient.getInstance().getCameraEntity();
+
+        if(cam == null) {
+            // something is wrong here
+            acc.waves$updateQuad(quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
+            acc.waves$writeQuad(buffers, offset, quad, ModelQuadFacing.UP, ModelQuadWinding.CLOCKWISE);
+
+            return;
+        }
 
 
-        quad.setFlags(0);
-        quad.setSprite(quadMethod.getSprite());
 
-        int cuts = 0;
+        var squaredDistance = cam.getBlockPos().getSquaredDistance(pos);
+        int cuts = MathHelper.floor(CUT_SPLINE.apply((float) squaredDistance));
         var quadDimension = cuts + 1;
 
         // the vertices of the width and the height are of this length
@@ -66,37 +77,12 @@ public class Debug {
 
         float singleQuad = 1f / quadDimension;
 
-        // Is inaccurrate
+        var startVertX = SodiumVertexInfo.of(quad, 0);
+        var startVertZ = SodiumVertexInfo.of(quad, 1);
+        var endVertZ = SodiumVertexInfo.of(quad, 2);
+        var endVertX = SodiumVertexInfo.of(quad, 3);
 
-        var _startVertX = SodiumVertexInfo.of(quadMethod, 0);
-        var _startVertZ = SodiumVertexInfo.of(quadMethod, 1);
-        var _endVertZ = SodiumVertexInfo.of(quadMethod, 2);
-        var _endVertX = SodiumVertexInfo.of(quadMethod, 3);
-
-
-        var y = .8f;
-        var startVertX = new SodiumVertexInfo(
-                0, y, 0,
-                _startVertX.u(),
-                _startVertX.v()
-        );
-
-        var startVertZ = new SodiumVertexInfo(
-                0, y, 1,
-                _startVertZ.u(), _startVertZ.v()
-        );
-
-        var endVertZ = new SodiumVertexInfo(
-                1, y, 1,
-                _endVertZ.u(), _endVertZ.v()
-        );
-
-        var endVertX = new SodiumVertexInfo(
-                1, y, 0,
-                _endVertX.u(), _endVertX.v()
-        );
-
-
+        var rand = (float) Math.random() * .5f;
         for (float currQuadX = 0; currQuadX < quadDimension; currQuadX++) {
             float startX = (currQuadX * 2f) * singleVertex;
             for (float currQuadZ = 0; currQuadZ < quadDimension; currQuadZ++) {
@@ -105,26 +91,28 @@ public class Debug {
                 var endX = startX + singleQuad;
                 var endZ = startZ + singleQuad;
 
+                var quadOffset = (float) Math.random() * .1f;
                 DebugFunction<SodiumVertexInfo, Integer, Float, Float> setVertex = (i, x, z) -> {
                     var currSide = startVertX.lerp(endVertX, x);
                     var otherSide = startVertZ.lerp(endVertZ, x);
 
                     var vertex = currSide.lerp(otherSide, z);
-                    setVertex(quad, i, vertex.x(), vertex.y(), vertex.z(), vertex.u(), vertex.v());
+                    setVertex(quad, i, vertex.x(), vertex.y() + rand + quadOffset, vertex.z(), vertex.u(), vertex.v());
 
                     return vertex;
                 };
 
+                // d1 - d4 just there for debugging purposes
                 var d1 = setVertex.accept(0, startX, startZ);
                 var d2 = setVertex.accept(1, startX, endZ);
                 var d3 = setVertex.accept(2, endX, endZ);
                 var d4 = setVertex.accept(3, endX, startZ);
 
+
                 acc.waves$updateQuad(quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
 
                 // replaced "facing" with ModelQuadFacing.DOWN
                 acc.waves$writeQuad(buffers, offset, quad, ModelQuadFacing.UP, ModelQuadWinding.CLOCKWISE);
-
             }
         }
         //acc.waves$updateQuad(quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
