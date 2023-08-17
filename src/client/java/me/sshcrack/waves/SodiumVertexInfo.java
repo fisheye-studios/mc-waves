@@ -3,7 +3,7 @@ package me.sshcrack.waves;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import net.minecraft.util.math.MathHelper;
 
-public record SodiumVertexInfo(double x, double y, double z, double u, double v) {
+public record SodiumVertexInfo(float x, float y, float z, float u, float v) {
     public static SodiumVertexInfo of(ModelQuadView quad, int i) {
         return new SodiumVertexInfo(
                 quad.getX(i), quad.getY(i), quad.getZ(i),
@@ -11,7 +11,7 @@ public record SodiumVertexInfo(double x, double y, double z, double u, double v)
         );
     }
 
-    public SodiumVertexInfo lerp(SodiumVertexInfo other, double delta) {
+    public SodiumVertexInfo lerp(SodiumVertexInfo other, float delta) {
         return new SodiumVertexInfo(
                 MathHelper.lerp(delta, x, other.x),
                 MathHelper.lerp(delta, y, other.y),

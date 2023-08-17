@@ -103,6 +103,23 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
             at = @At(
                     value = "INVOKE",
                     target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/pipeline/FluidRenderer;writeQuad(Lme/jellysquid/mods/sodium/client/render/chunk/compile/buffers/ChunkModelBuilder;Lnet/minecraft/util/math/BlockPos;Lme/jellysquid/mods/sodium/client/model/quad/ModelQuadView;Lme/jellysquid/mods/sodium/client/model/quad/properties/ModelQuadFacing;Lme/jellysquid/mods/sodium/client/model/quad/properties/ModelQuadWinding;)V",
+                    ordinal = 1
+            )
+    )
+    private void waves$writeQuad2(
+            FluidRenderer renderer,
+            ChunkModelBuilder builder, BlockPos offset, ModelQuadView quad, ModelQuadFacing facing, ModelQuadWinding winding,
+            Operation<Void> operation
+    ) {
+        if(!hasRendered)
+            operation.call(renderer, builder, offset, quad, facing, winding);
+    }
+
+    @WrapOperation(
+            method = "render",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/pipeline/FluidRenderer;writeQuad(Lme/jellysquid/mods/sodium/client/render/chunk/compile/buffers/ChunkModelBuilder;Lnet/minecraft/util/math/BlockPos;Lme/jellysquid/mods/sodium/client/model/quad/ModelQuadView;Lme/jellysquid/mods/sodium/client/model/quad/properties/ModelQuadFacing;Lme/jellysquid/mods/sodium/client/model/quad/properties/ModelQuadWinding;)V",
                     ordinal = 0
             )
     )
@@ -111,11 +128,12 @@ public abstract class MixinFluidRenderer implements FluidRendererState {
             ChunkModelBuilder builder, BlockPos offset, ModelQuadView quad, ModelQuadFacing facing, ModelQuadWinding winding,
             Operation<Void> operation
     ) {
-        if(!hasRendered) {
+        if(!hasRendered)
             operation.call(renderer, builder, offset, quad, facing, winding);
-            return;
-        }
+    }
 
+    @Inject(method = "render", at=@At("TAIL"))
+    private void waves$resetRendered(BlockRenderView world, FluidState fluidState, BlockPos pos, BlockPos offset, ChunkModelBuilder buffers, CallbackInfoReturnable<Boolean> cir) {
         hasRendered = false;
     }
 }

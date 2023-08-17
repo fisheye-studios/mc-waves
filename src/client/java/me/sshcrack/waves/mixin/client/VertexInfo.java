@@ -18,19 +18,18 @@ public record VertexInfo(
     public VertexInfo lerp(VertexInfo other, double delta) {
         float fDelta = (float) delta;
 
-        var lX = MathHelper.lerp(x, other.x, delta);
-        var lY = MathHelper.lerp(y, other.y, delta);
-        var lZ = MathHelper.lerp(z, other.z, delta);
+        var lX = MathHelper.lerp(delta, x, other.x);
+        var lY = MathHelper.lerp(delta, y, other.y);
+        var lZ = MathHelper.lerp(delta, z, other.z);
 
 
-        var lR = MathHelper.lerp(red, other.red, fDelta);
-        var lG = MathHelper.lerp(green, other.green, fDelta);
-        var lB = MathHelper.lerp(blue, other.blue, fDelta);
+        var lR = MathHelper.lerp(fDelta, red, other.red);
+        var lG = MathHelper.lerp(fDelta, green, other.green);
+        var lB = MathHelper.lerp(fDelta, blue, other.blue);
 
-        var lU = MathHelper.lerp(u, other.u, fDelta);
-        var lV = MathHelper.lerp(v, other.v, fDelta);
+        var lU = MathHelper.lerp(fDelta, u, other.u);
+        var lV = MathHelper.lerp(fDelta, v, other.v);
 
-        // dear mojang devlopers: Why is this the other way around??
         var lLight = MathHelper.lerp(fDelta, light, other.light);
         return new VertexInfo(
                 lX, lY, lZ,

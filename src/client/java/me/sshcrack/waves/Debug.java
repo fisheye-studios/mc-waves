@@ -9,6 +9,7 @@ import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.FluidRenderer;
+import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.sshcrack.waves.mixin.client.VertexInfo;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
@@ -20,7 +21,12 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 public class Debug {
-    private static ModelQuadViewMutable quad = new ModelQuad();
+    private static final ModelQuadViewMutable quad = new ModelQuad();
+
+
+    static {
+        quad.setNormal(Norm3b.pack(0.0F, 1.0F, 0.0F));
+    }
 
     private static Vector3fc getCoordinates(int vertexIndex, ModelQuadView quad) {
         return new Vector3f(
@@ -44,47 +50,75 @@ public class Debug {
             BlockPos offset
     ) {
         var acc = (FluidRendererState) renderer;
-        //acc.waves$updateQuad(quadMethod, world, pos, lighter, Direction.UP, 1.0F, colorSampler, fluidState);
+        //acc.waves$updateQuad(quadMethod, world, pos, lighter, dir, brightness, colorSampler, fluidState);
         //acc.waves$writeQuad(buffers, offset, quadMethod, ModelQuadFacing.UP, ModelQuadWinding.CLOCKWISE);
+
 
         quad.setFlags(0);
         quad.setSprite(quadMethod.getSprite());
 
-        int cuts = 1;
+        int cuts = 0;
         var quadDimension = cuts + 1;
 
         // the vertices of the width and the height are of this length
         int vertexDimension = quadDimension * 2;
-        double singleVertex = 1d / vertexDimension;
+        float singleVertex = 1f / vertexDimension;
 
-        double singleQuad = 1d / quadDimension;
+        float singleQuad = 1f / quadDimension;
 
-        var startVertX = SodiumVertexInfo.of(quadMethod, 0);
-        var startVertZ = SodiumVertexInfo.of(quadMethod, 1);
-        var endVertZ = SodiumVertexInfo.of(quadMethod, 2);
-        var endVertX = SodiumVertexInfo.of(quadMethod, 3);
+        // Is inaccurrate
+
+        var _startVertX = SodiumVertexInfo.of(quadMethod, 0);
+        var _startVertZ = SodiumVertexInfo.of(quadMethod, 1);
+        var _endVertZ = SodiumVertexInfo.of(quadMethod, 2);
+        var _endVertX = SodiumVertexInfo.of(quadMethod, 3);
 
 
-        for (double currQuadX = 0; currQuadX < quadDimension; currQuadX++) {
-            double startX = (float) ((currQuadX * 2d) * singleVertex);
-            for (double currQuadZ = 0; currQuadZ < quadDimension; currQuadZ++) {
-                var startZ = (currQuadZ * 2d) * singleVertex;
+        var y = .8f;
+        var startVertX = new SodiumVertexInfo(
+                0, y, 0,
+                _startVertX.u(),
+                _startVertX.v()
+        );
+
+        var startVertZ = new SodiumVertexInfo(
+                0, y, 1,
+                _startVertZ.u(), _startVertZ.v()
+        );
+
+        var endVertZ = new SodiumVertexInfo(
+                1, y, 1,
+                _endVertZ.u(), _endVertZ.v()
+        );
+
+        var endVertX = new SodiumVertexInfo(
+                1, y, 0,
+                _endVertX.u(), _endVertX.v()
+        );
+
+
+        for (float currQuadX = 0; currQuadX < quadDimension; currQuadX++) {
+            float startX = (currQuadX * 2f) * singleVertex;
+            for (float currQuadZ = 0; currQuadZ < quadDimension; currQuadZ++) {
+                var startZ = (currQuadZ * 2f) * singleVertex;
 
                 var endX = startX + singleQuad;
                 var endZ = startZ + singleQuad;
 
-                TripleConsumer<Integer, Double, Double> setVertex = (i, x, z) -> {
+                DebugFunction<SodiumVertexInfo, Integer, Float, Float> setVertex = (i, x, z) -> {
                     var currSide = startVertX.lerp(endVertX, x);
                     var otherSide = startVertZ.lerp(endVertZ, x);
 
                     var vertex = currSide.lerp(otherSide, z);
                     setVertex(quad, i, vertex.x(), vertex.y(), vertex.z(), vertex.u(), vertex.v());
+
+                    return vertex;
                 };
 
-                setVertex.accept(0, startX, startZ);
-                setVertex.accept(1, startX, endZ);
-                setVertex.accept(2, endX, endZ);
-                setVertex.accept(3, endX, startZ);
+                var d1 = setVertex.accept(0, startX, startZ);
+                var d2 = setVertex.accept(1, startX, endZ);
+                var d3 = setVertex.accept(2, endX, endZ);
+                var d4 = setVertex.accept(3, endX, startZ);
 
                 acc.waves$updateQuad(quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
 
@@ -93,6 +127,10 @@ public class Debug {
 
             }
         }
+        //acc.waves$updateQuad(quad, world, pos, lighter, dir, brightness, colorSampler, fluidState);
+
+        // replaced "facing" with ModelQuadFacing.DOWN
+        //acc.waves$writeQuad(buffers, offset, quad, ModelQuadFacing.UP, ModelQuadWinding.CLOCKWISE);
     }
 
     public static void renderVertices(
@@ -129,11 +167,34 @@ public class Debug {
         }
     }
 
-    private static void setVertex(ModelQuadViewMutable quad, int i, double x, double y, double z, double u, double v) {
-        quad.setX(i, (float) x);
-        quad.setY(i, (float) y);
-        quad.setZ(i, (float) z);
-        quad.setTexU(i, (float) u);
-        quad.setTexV(i, (float) v);
+    private static void setVertex(ModelQuadViewMutable quad, int i, float x, float y, float z, float u, float v) {
+        /*
+        if(x != 0 && x != 1)
+            x -= 0.001F;
+        if(y != 0 && y != 1)
+            y -= 0.001F;
+        if(z != 0 && z != 1)
+            z -= 0.001F;
+        */
+        quad.setX(i, x);
+        quad.setY(i, y);
+        quad.setZ(i, z);
+        quad.setTexU(i, u);
+        quad.setTexV(i, v);
     }
 }
+
+
+/**
+ * 0.0, 0.8, 0.0
+ * 0.0, 0.8, 1.0
+ * 1.0, 0.8, 1.0
+ * 1.0, 0.8, 0.0
+ * <p>
+ * <p>
+ * output:
+ * 0.0,0.08,0.0
+ * 1.0, 0.18, 0
+ * 1.0, 0.99, 1.0
+ * 0.0, 0.012, 1.0
+ */
