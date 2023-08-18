@@ -24,13 +24,12 @@ import org.joml.Vector3fc;
 import java.util.function.Consumer;
 
 public class Debug {
+    private static final boolean DEBUG_VERTICES = false;
 
     private static final Spline<Float, ToFloatFunction<Float>> CUT_SPLINE = Spline.builder(ToFloatFunction.fromFloat(v -> v))
-            .add(MathHelper.square(0f), 10)
-            .add(MathHelper.square(5f), 3)
-            .add(MathHelper.square(10f), 2)
-            .add(MathHelper.square(20f), 1)
-            .add(MathHelper.square(30f), 0)
+            .add(MathHelper.square(0f), 3)
+            .add(MathHelper.square(5f), 1)
+            .add(MathHelper.square(10f), 0)
             .build();
 
     private static Vector3fc getCoordinates(int vertexIndex, ModelQuadView quad) {
@@ -83,6 +82,7 @@ public class Debug {
         var endVertX = SodiumVertexInfo.of(quad, 3);
 
         var rand = (float) Math.random() * .5f;
+
         for (float currQuadX = 0; currQuadX < quadDimension; currQuadX++) {
             float startX = (currQuadX * 2f) * singleVertex;
             for (float currQuadZ = 0; currQuadZ < quadDimension; currQuadZ++) {
@@ -92,12 +92,17 @@ public class Debug {
                 var endZ = startZ + singleQuad;
 
                 var quadOffset = (float) Math.random() * .1f;
+
                 DebugFunction<SodiumVertexInfo, Integer, Float, Float> setVertex = (i, x, z) -> {
                     var currSide = startVertX.lerp(endVertX, x);
                     var otherSide = startVertZ.lerp(endVertZ, x);
 
                     var vertex = currSide.lerp(otherSide, z);
-                    setVertex(quad, i, vertex.x(), vertex.y() + rand + quadOffset, vertex.z(), vertex.u(), vertex.v());
+
+                    var vertexY = vertex.y();
+                    vertexY += DEBUG_VERTICES ? rand + quadOffset : 0;
+
+                    setVertex(quad, i, vertex.x(), vertex.y() + vertexY, vertex.z(), vertex.u(), vertex.v());
 
                     return vertex;
                 };
