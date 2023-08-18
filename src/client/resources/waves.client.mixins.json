@@ -9,6 +9,8 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "modcompat.iris.MixinProgramSet",
+    "modcompat.iris.MixinProgramSource",
     "modcompat.sodium.MixinFluidRenderer"
   ]
 }

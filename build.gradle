@@ -37,6 +37,10 @@ loom {
 }
 
 dependencies {
+	// https://mvnrepository.com/artifact/io.github.douira/glsl-transformer
+	implementation group: 'io.github.douira', name: 'glsl-transformer', version: '2.0.0'
+
+
 	include(implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-fabric:0.2.0-beta.6")))
 
 	// To change the versions see the gradle.properties file
