@@ -8,6 +8,7 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "modcompat.iris.MixinCommonUniforms",
     "modcompat.iris.MixinProgramSet",
     "modcompat.iris.ProgramSourceAccessor"
   ]

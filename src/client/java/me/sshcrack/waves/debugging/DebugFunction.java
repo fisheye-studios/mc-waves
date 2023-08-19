@@ -1,4 +1,4 @@
-package me.sshcrack.waves;
+package me.sshcrack.waves.debugging;
 
 @FunctionalInterface
 public interface DebugFunction<A, T, U, K> {

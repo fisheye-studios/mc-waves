@@ -1,4 +1,4 @@
-package me.sshcrack.waves;
+package me.sshcrack.waves.util;
 
 import java.util.Objects;
 import java.util.function.Consumer;

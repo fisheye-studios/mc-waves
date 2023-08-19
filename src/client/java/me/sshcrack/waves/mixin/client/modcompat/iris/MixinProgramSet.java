@@ -1,7 +1,7 @@
 package me.sshcrack.waves.mixin.client.modcompat.iris;
 
 import me.sshcrack.waves.OceanShaders;
-import me.sshcrack.waves.ProgramSourceOverridable;
+import me.sshcrack.waves.interfaces.ProgramSourceOverridable;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shaderpack.ShaderPack;
@@ -14,14 +14,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-@Mixin(ProgramSet.class)
+@Mixin(value = ProgramSet.class, remap = false)
 public class MixinProgramSet {
     @Shadow
     @Final
@@ -35,19 +30,13 @@ public class MixinProgramSet {
             ShaderPack pack,
             CallbackInfo ci
     ) {
-        OceanShaders.beforeProcessingVertex = gbuffersWater
-                .getVertexSource()
-                .orElse(null);
+        var vertex = gbuffersWater.getVertexSource().orElse(null);
+        if(vertex == null)
+            return;
 
-        try (InputStream in = getClass().getResourceAsStream("/shader/gbuffers_waves.vsh");
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-
-            var fullShader = reader.lines()
-                    .collect(Collectors.joining("\n"));
-
-            ((ProgramSourceOverridable) gbuffersWater).waves$setVertexShaderOverride(fullShader);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        ((ProgramSourceOverridable) gbuffersWater)
+                .waves$setVertexShaderOverride(
+                        OceanShaders.transformVertexShader(vertex)
+                );
     }
 }

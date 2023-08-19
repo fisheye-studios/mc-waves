@@ -1,4 +1,4 @@
-package me.sshcrack.waves;
+package me.sshcrack.waves.util;
 
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import net.minecraft.util.math.MathHelper;
