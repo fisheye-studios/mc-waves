@@ -3,14 +3,12 @@
   "package": "me.sshcrack.waves.mixin.client",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "MixinFluidRenderer"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
     "modcompat.iris.MixinProgramSet",
-    "modcompat.iris.MixinProgramSource",
-    "modcompat.sodium.MixinFluidRenderer"
+    "modcompat.iris.ProgramSourceAccessor"
   ]
 }
